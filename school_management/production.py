@@ -5,7 +5,7 @@ These settings extend the base settings and configure for production environment
 
 from .settings import *
 import os
-import dj_database_url
+import urllib.parse
 
 DEBUG = False
 
@@ -13,12 +13,27 @@ SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
 
 ALLOWED_HOSTS = ['your-app-name.onrender.com', '.render.com', '*']
 
-# Database configuration
-# Parse database URL directly from environment variable
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
+# Direct database configuration
+if os.environ.get('DATABASE_URL'):
+    db_url = os.environ.get('DATABASE_URL')
+    url_parts = urllib.parse.urlparse(db_url)
+    
+    # Extract database connection details from URL
+    username = url_parts.username
+    password = url_parts.password
+    hostname = url_parts.hostname
+    port = url_parts.port or '5432'
+    database = url_parts.path.lstrip('/')
+    
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': database,
+            'USER': username,
+            'PASSWORD': password,
+            'HOST': hostname,
+            'PORT': port,
+        }
     }
 
 # Add WhiteNoise middleware for static files
